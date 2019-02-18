@@ -13,7 +13,7 @@ int buttonState_longPause;
 int lastButtonState_longPause = LOW;
 unsigned long lastDebounceTime_longPause = 0; // The last time the output pin was toggled
 
-const unsigned long DEBOUNCE_DELAY = 50; // The debounce time (should be increased if flickering occurs)
+const unsigned long DEBOUNCE_DELAY = 150; // The debounce time (should be increased if flickering occurs)
 
 
 

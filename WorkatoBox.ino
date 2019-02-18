@@ -4,6 +4,10 @@
 // Common settings
 #define DEBUG true
 
+// LED Settings
+const int PIN_LED_WORK = 18; // Blue LED
+const int PIN_LED_PAUSE = 19; // Green LED
+
 // Button Settings
 const int PIN_BUTTON_WORK = 25;
 const int PIN_BUTTON_SHORT_PAUSE = 26;
@@ -26,12 +30,14 @@ enum WORKATO_STATE {
 };
 
 // TODO Update to the real values
-unsigned long WORKATO_STATE_WORKING_DURATION = 5 * 1000; // 5 seconds
+unsigned long WORKATO_STATE_WORKING_DURATION = 25 * 60 * 1000; // 25 minutes
 int workatoStateWorkingTimerId = -1;
-unsigned long WORKATO_STATE_SHORT_PAUSE_DURATION = 5 * 1000; // 5 seconds
+int workatoStateWorkingLedTimerId = -1;
+unsigned long WORKATO_STATE_SHORT_PAUSE_DURATION = 5 * 60 * 1000; // 5 minutes
 int workatoStateShortPauseTimerId = -1;
-unsigned long WORKATO_STATE_LONG_PAUSE_DURATION = 5 * 1000; // 5 seconds
+unsigned long WORKATO_STATE_LONG_PAUSE_DURATION = 10 * 60 * 1000; // 10 minutes
 int workatoStateLongPauseTimerId = -1;
+int workatoStatePauseLedTimerId = -1;
 
 int lastWorkatoState = WORKATO_STATE::IN_IDLE;
 int currentWorkatoState = WORKATO_STATE::IN_IDLE;
@@ -45,6 +51,11 @@ void setup() {
   pinMode(PIN_BUTTON_WORK, INPUT);
   pinMode(PIN_BUTTON_SHORT_PAUSE, INPUT);
   pinMode(PIN_BUTTON_LONG_PAUSE, INPUT);
+  pinMode(PIN_LED_WORK, OUTPUT);
+  digitalWrite(PIN_LED_WORK, LOW);
+  pinMode(PIN_LED_PAUSE, OUTPUT);
+  digitalWrite(PIN_LED_PAUSE, LOW);
+  blinkSetupDone();
 }
 
 void loop() {
@@ -65,6 +76,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::WORKING;
         workatoStateWorkingTimerId = workatoTimer.after(WORKATO_STATE_WORKING_DURATION, workatoStateEnded, 0); // Setting optional context to 0
+        workatoStateWorkingLedTimerId = workatoTimer.oscillate(PIN_LED_WORK, 250, LOW);
         break;
       case SHORT_PAUSE:
         if (DEBUG) {
@@ -73,6 +85,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::IN_SHORT_PAUSE;
         workatoStateShortPauseTimerId = workatoTimer.after(WORKATO_STATE_SHORT_PAUSE_DURATION, workatoStateEnded, 0); // Setting optional context to 0
+        workatoStatePauseLedTimerId = workatoTimer.oscillate(PIN_LED_PAUSE, 500, LOW);
         break;
       case LONG_PAUSE:
         if (DEBUG) {
@@ -81,6 +94,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::IN_LONG_PAUSE;
         workatoStateLongPauseTimerId = workatoTimer.after(WORKATO_STATE_LONG_PAUSE_DURATION, workatoStateEnded, 0); // Setting optional context to 0
+        workatoStatePauseLedTimerId = workatoTimer.oscillate(PIN_LED_PAUSE, 750, LOW);
         break;
       case NOTHING:
       default:
@@ -115,6 +129,24 @@ void stopAllWorkatoTimers() {
     Serial.println("Stopping all timers");
   }
   workatoTimer.stop(workatoStateWorkingTimerId);
+  workatoTimer.stop(workatoStateWorkingLedTimerId);
+  workatoTimer.stop(workatoStatePauseLedTimerId);
+  // Turn off the LEDs
+  digitalWrite(PIN_LED_WORK, LOW);
+  digitalWrite(PIN_LED_PAUSE, LOW);
 }
 
+/**
+   Indicates that the setup is done by blinking all LEDs 3 times
+*/
+void blinkSetupDone() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(PIN_LED_WORK, HIGH);
+    digitalWrite(PIN_LED_PAUSE, HIGH);
+    delay(500);
+    digitalWrite(PIN_LED_WORK, LOW);
+    digitalWrite(PIN_LED_PAUSE, LOW);
+    delay(500);
+  }
+}
 
