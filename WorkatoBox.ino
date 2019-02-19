@@ -32,12 +32,10 @@ enum WORKATO_STATE {
 // TODO Update to the real values
 unsigned long WORKATO_STATE_WORKING_DURATION = 25 * 60 * 1000; // 25 minutes
 int workatoStateWorkingTimerId = -1;
-int workatoStateWorkingLedTimerId = -1;
 unsigned long WORKATO_STATE_SHORT_PAUSE_DURATION = 5 * 60 * 1000; // 5 minutes
 int workatoStateShortPauseTimerId = -1;
 unsigned long WORKATO_STATE_LONG_PAUSE_DURATION = 10 * 60 * 1000; // 10 minutes
 int workatoStateLongPauseTimerId = -1;
-int workatoStatePauseLedTimerId = -1;
 
 int lastWorkatoState = WORKATO_STATE::IN_IDLE;
 int currentWorkatoState = WORKATO_STATE::IN_IDLE;
@@ -76,7 +74,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::WORKING;
         workatoStateWorkingTimerId = workatoTimer.after(WORKATO_STATE_WORKING_DURATION, workatoStateEnded, 0); // Setting optional context to 0
-        workatoStateWorkingLedTimerId = workatoTimer.oscillate(PIN_LED_WORK, 250, LOW);
+        digitalWrite(PIN_LED_WORK, HIGH);
         break;
       case SHORT_PAUSE:
         if (DEBUG) {
@@ -85,7 +83,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::IN_SHORT_PAUSE;
         workatoStateShortPauseTimerId = workatoTimer.after(WORKATO_STATE_SHORT_PAUSE_DURATION, workatoStateEnded, 0); // Setting optional context to 0
-        workatoStatePauseLedTimerId = workatoTimer.oscillate(PIN_LED_PAUSE, 500, LOW);
+        digitalWrite(PIN_LED_PAUSE, HIGH);
         break;
       case LONG_PAUSE:
         if (DEBUG) {
@@ -94,7 +92,7 @@ void loop() {
         lastWorkatoState = currentWorkatoState;
         currentWorkatoState = WORKATO_STATE::IN_LONG_PAUSE;
         workatoStateLongPauseTimerId = workatoTimer.after(WORKATO_STATE_LONG_PAUSE_DURATION, workatoStateEnded, 0); // Setting optional context to 0
-        workatoStatePauseLedTimerId = workatoTimer.oscillate(PIN_LED_PAUSE, 750, LOW);
+        digitalWrite(PIN_LED_PAUSE, HIGH);
         break;
       case NOTHING:
       default:
@@ -129,8 +127,8 @@ void stopAllWorkatoTimers() {
     Serial.println("Stopping all timers");
   }
   workatoTimer.stop(workatoStateWorkingTimerId);
-  workatoTimer.stop(workatoStateWorkingLedTimerId);
-  workatoTimer.stop(workatoStatePauseLedTimerId);
+  workatoTimer.stop(workatoStateShortPauseTimerId);
+  workatoTimer.stop(workatoStateLongPauseTimerId);
   // Turn off the LEDs
   digitalWrite(PIN_LED_WORK, LOW);
   digitalWrite(PIN_LED_PAUSE, LOW);
