@@ -1,3 +1,4 @@
+#define DEBUG
 // LED Settings
 #define D0 16 // Green LED
 #define D1 5 // Green LED
@@ -8,14 +9,16 @@
 #define D6 12 // Blue LED
 
 int workLedPins[] = {D0, D1, D2};
+int currentWorkLedStatus = LOW;
 int pauseLedPins[] = {D3, D4, D5, D6};
+int currentPauseLedStatus = LOW;
 
 String serialData;
 
 void setup() {
-
+  delay(500);
   Serial.begin(115200);
-
+  delay(1000);
   // Init Leds as Outputs
   for (int i = 0; i < sizeof(workLedPins); i++) {
     pinMode(workLedPins[i], OUTPUT);
@@ -29,26 +32,50 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     serialData = Serial.readString();
+    // preprocess the data string by replacing any extra characters
+    serialData.trim();
+    serialData.replace("\n", "");
+    serialData.replace("\t", "");
+    serialData.replace("\r", "");
 
+#ifdef DEBUG
+    Serial.println(serialData);
+#endif
     if (serialData == "work") {
-      allWorkLeds(HIGH);
-      allPauseLeds(LOW);
+#ifdef DEBUG
+      Serial.println("Work phase");
+#endif
+      allLeds(LOW, false, 0);
+      allWorkLeds(HIGH, true, 200);
     }
     else if (serialData == "shortpause") {
-      allWorkLeds(LOW);
-      allPauseLeds(HIGH);
+#ifdef DEBUG
+      Serial.println("Short pause phase");
+#endif
+      allLeds(LOW, false, 0);
+      allPauseLeds(HIGH, true, 200);
     }
     else if (serialData == "longpause") {
-      allWorkLeds(LOW);
-      allPauseLeds(HIGH);
+#ifdef DEBUG
+      Serial.println("Long pause phase");
+#endif
+      allLeds(LOW, false, 0);
+      allPauseLeds(HIGH, true, 400);
     }
     else if (serialData == "stop") {
-      allWorkLeds(HIGH);
-      allPauseLeds(LOW);
+#ifdef DEBUG
+      Serial.println("Stopping current phase");
+#endif
+      allLeds(LOW, false, 0);
+    }
+    else {
+#ifdef DEBUG
+      Serial.print("Unknown Serial command: ");
+      Serial.println(serialData);
+#endif
     }
   }
 }
-
 /**
    Indicates that the setup is done by blinking all LEDs 3 times
 */
@@ -75,27 +102,31 @@ void blinkSetupDone() {
   delay(300);
   digitalWrite(pauseLedPins[3], LOW);
   delay(300);
-  allWorkLeds(HIGH);
-  allPauseLeds(HIGH);
+  allLeds(HIGH, true, 300);
   delay(2000);
-  allWorkLeds(LOW);
-  allPauseLeds(LOW);
+  allLeds(LOW, false, 0);
 }
 
-/**
-   Sets all work LEDs to the given status (HIGH, LOW)
-*/
-void allWorkLeds(int stat) {
-  for (int i = 0; i < sizeof(workLedPins); i++) {
-    digitalWrite(workLedPins[i], stat);
-  }
+void allLeds(int stat, boolean stairEffect, int stairEffectDelay) {
+  allWorkLeds(stat, stairEffect, stairEffectDelay);
+  if (stairEffect) delay(stairEffectDelay);
+  allPauseLeds(stat, stairEffect, stairEffectDelay);
 }
 
-/**
-   Sets all pause LEDs to the given status (HIGH, LOW)
-*/
-void allPauseLeds(int stat) {
-  for (int i = 0; i < sizeof(pauseLedPins); i++) {
-    digitalWrite(pauseLedPins[i], stat);
-  }
+void allWorkLeds(int stat, boolean stairEffect, int stairEffectDelay) {
+  digitalWrite(workLedPins[0], stat);
+  if (stairEffect) delay(stairEffectDelay);
+  digitalWrite(workLedPins[1], stat);
+  if (stairEffect) delay(stairEffectDelay);
+  digitalWrite(workLedPins[2], stat);
+}
+
+void allPauseLeds(int stat, boolean stairEffect, int stairEffectDelay) {
+  digitalWrite(pauseLedPins[0], stat);
+  if (stairEffect) delay(stairEffectDelay);
+  digitalWrite(pauseLedPins[1], stat);
+  if (stairEffect) delay(stairEffectDelay);
+  digitalWrite(pauseLedPins[2], stat);
+  if (stairEffect) delay(stairEffectDelay);
+  digitalWrite(pauseLedPins[3], stat);
 }
