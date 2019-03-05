@@ -18,7 +18,7 @@ kb_shortcut_startLongPause = "strg+alt+shift+p"
 kb_shortcut_interrupt = "strg+alt+shift+z"
 
 # The COM Port where the WorkatoBox is connected
-com_port = "com6"
+com_port = "com7"
 # The baudrate to use for Serial communication
 baudrate = 115200
 
@@ -61,7 +61,7 @@ def on_start_shortpause():
         log("Cannot start/restart short pause, current phase: " + currentPhase)
 
 def on_start_longpause():
-    global currentPhase, timer_work, timer_shortpause, timer_longpause
+    global currentPhase, timer_work, timer_shortpause, timer_shortpause
     if timer_longpause == None and timer_work == None and timer_longpause == None:
         log("Starting long pause phase (10min)")
         timer_longpause = Timer(10.0 * 60, on_stop)
